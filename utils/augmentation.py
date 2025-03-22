@@ -105,33 +105,33 @@ sample_image = load_image(sample_id)
 sample_mask = load_mask(sample_id)
 
 # display Image & Mask
-plt.figure(figsize=(10, 5))
+# plt.figure(figsize=(10, 5))
+#
+# plt.imshow(sample_image)
+# plt.axis("off")
+# plt.title("Image")
+# plt.show()
+#
+# plt.imshow(sample_mask[:, :, 0], cmap="gray")
+# plt.axis("off")
+# plt.title("Category 0: Segmentation Mask")
+# plt.show()
+#
+# plt.imshow(sample_mask[:, :, 1], cmap="gray")
+# plt.axis("off")
+# plt.title("Category 1: Segmentation Mask")
+# plt.show()
+#
+# plt.imshow(sample_mask[:, :, 2], cmap="gray")
+# plt.axis("off")
+# plt.title("Category 2: Segmentation Mask")
+# plt.show()
 
-plt.imshow(sample_image)
-plt.axis("off")
-plt.title("Image")
-plt.show()
-
-plt.imshow(sample_mask[:, :, 0], cmap="gray")
-plt.axis("off")
-plt.title("Category 0: Segmentation Mask")
-plt.show()
-
-plt.imshow(sample_mask[:, :, 1], cmap="gray")
-plt.axis("off")
-plt.title("Category 1: Segmentation Mask")
-plt.show()
-
-plt.imshow(sample_mask[:, :, 2], cmap="gray")
-plt.axis("off")
-plt.title("Category 2: Segmentation Mask")
-plt.show()
-
-plt.imshow(sample_mask[:, :, 3], cmap="gray")
-plt.axis("off")
-plt.title("Category 3: Segmentation Mask")
-
-plt.show()
+# plt.imshow(sample_mask[:, :, 3], cmap="gray")
+# plt.axis("off")
+# plt.title("Category 3: Segmentation Mask")
+#
+# plt.show()
 
 X_train = np.array([load_image(img_id) for img_id in image_ids[:420]])  # Load first 420 images
 Y_train = np.array([load_mask(img_id) for img_id in image_ids[:420]])
@@ -324,7 +324,7 @@ def convert_numpy_to_coco(images, masks, output_dir, class_names, prefix="image"
     with open(os.path.join(output_dir, "annotations.json"), "w") as f:
         json.dump(coco_output, f, indent=4)
 
-    print(f"COCO dataset saved to {output_dir}/annotations.json")
+    print(f"COCO dataset saved to {output_dir}\\annotations.json")
 
 convert_numpy_to_coco(
     images=X_train,               # shape: (N, H, W, 3)
