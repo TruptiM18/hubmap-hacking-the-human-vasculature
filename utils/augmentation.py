@@ -242,11 +242,102 @@ Y_train1 = np.concatenate((Y_train, Y_aug), axis=0)
 X_train = X_train1
 Y_train = Y_train1
 
+import os
+import numpy as np
+import cv2
+import json
+from pycocotools import mask as mask_utils
+from skimage import measure
+from tqdm import tqdm
 
-os.makedirs(AUGMENTED_DATA_ROOT, exist_ok=True)
+def convert_numpy_to_coco(images, masks, output_dir, class_names, prefix="image"):
+    os.makedirs(output_dir, exist_ok=True)
 
-for i in range(X_train.shape[0]):
-    img = X_train[i]
-    img_path = os.path.join(AUGMENTED_DATA_ROOT, f"image_{i:03d}.tif")
-    cv2.imwrite(img_path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    coco_output = {
+        "images": [],
+        "annotations": [],
+        "categories": []
+    }
+
+    # Add categories
+    for idx, name in enumerate(class_names):
+        coco_output["categories"].append({
+            "id": idx + 1,
+            "name": name,
+            "supercategory": "object"
+        })
+
+    ann_id = 1
+    for i in tqdm(range(images.shape[0]), desc="Converting to COCO"):
+        image = images[i]
+        mask = masks[i]
+        height, width = image.shape[:2]
+
+        # Save image to disk (optional)
+        file_name = f"{prefix}_{i:04d}.png"
+        file_path = os.path.join(output_dir, file_name)
+        cv2.imwrite(file_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+
+        # Add image metadata
+        coco_output["images"].append({
+            "id": i + 1,
+            "file_name": file_name,
+            "width": width,
+            "height": height
+        })
+
+        # Process each class
+        for class_idx in range(mask.shape[-1]):
+            binary_mask = mask[:, :, class_idx].astype(np.uint8)
+            if binary_mask.sum() == 0:
+                continue  # Skip empty masks
+
+            contours = measure.find_contours(binary_mask, 0.5)
+            segmentation = []
+
+            for contour in contours:
+                contour = np.flip(contour, axis=1)
+                if len(contour) >= 6:  # Must be at least 3 points (6 coords)
+                    segmentation.append(contour.ravel().tolist())
+
+            if not segmentation:
+                continue
+
+            rle = mask_utils.encode(np.asfortranarray(binary_mask))
+            area = float(mask_utils.area(rle))
+            bbox = mask_utils.toBbox(rle).tolist()
+
+            annotation = {
+                "id": ann_id,
+                "image_id": i + 1,
+                "category_id": class_idx + 1,
+                "segmentation": segmentation,
+                "area": area,
+                "bbox": bbox,
+                "iscrowd": 0
+            }
+
+            coco_output["annotations"].append(annotation)
+            ann_id += 1
+
+    # Save final COCO JSON
+    with open(os.path.join(output_dir, "annotations.json"), "w") as f:
+        json.dump(coco_output, f, indent=4)
+
+    print(f"COCO dataset saved to {output_dir}/annotations.json")
+
+convert_numpy_to_coco(
+    images=X_train,               # shape: (N, H, W, 3)
+    masks=Y_train,         # shape: (N, H, W, num_classes)
+    output_dir=AUGMENTED_DATA_ROOT + "\\data",
+    class_names=["background", "blood_vessel", "vein", "other"]
+)
+
+
+# os.makedirs(AUGMENTED_DATA_ROOT + "\\data", exist_ok=True)
+#
+# for i in range(X_train.shape[0]):
+#     img = X_train[i]
+#     img_path = os.path.join(AUGMENTED_DATA_ROOT + "\\data", f"image_{i:03d}.tif")
+#     cv2.imwrite(img_path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
